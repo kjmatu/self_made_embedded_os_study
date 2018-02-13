@@ -1,0 +1,35 @@
+/* OUTPUT_FORMAT("elm32-h8300") */
+OUTPUT_ARCH(h8300h)
+ENTRY("_start")
+
+SECTIONS
+{
+	/*メモリの先頭番地から配置*/
+	. = 0x0;
+	.vectors : {
+		/*割り込みベクタ*/
+		vector.o(.data)
+	}
+
+	.text : {
+		/*テキスト領域*/
+		*(.text)
+	}
+
+	.rodata : {
+		*(.strings)
+		*(.rodata)
+		*(.rodata.*)
+	}
+
+	.data : {
+		/*データ領域*/
+		*(.data)
+	}
+
+	.bss : {
+		/*BSS領域*/
+		*(.bss)
+		*(COMMON)
+	}
+}
