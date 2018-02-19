@@ -14,10 +14,10 @@ RANLIB = $(BINDIR)/$(ADDNAME)ranlib
 STRIP = $(BINDIR)/$(ADDNAME)strip
 
 # フラッシュ書き込みツール
-H8WRITE = /mnt/d/workspace/my_emb_os/tools/kz_h8write-v0.2.1/bin/kz_h8write
+H8WRITE = /mnt/d/workspace/kozos/tools/kz_h8write-v0.2.1/bin/kz_h8write
 
 # シリアル接続先
-H8WRITE_SERDEV = /dev/ttyS3
+H8WRITE_SERDEV = /dev/ttyS6
 
 # コンパイルするソースコード
 OBJS = vector.o startup.o main.o
