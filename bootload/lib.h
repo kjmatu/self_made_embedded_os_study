@@ -1,8 +1,10 @@
 #ifndef _LIB_H_INCLUDED_
 #define _LIB_H_INCLUDED_
 
-int putc(unsigned char c); //1文字送信
-int puts(unsigned char *str); //文字列送信
+int putc(unsigned char c); // 1文字送信
+unsigned char getc(void); // 1文字受信
+int puts(unsigned char *str); // コンソールから文字列送信
+int gets(unsigned char *buf); // コンソールから文字列受信
 void *memset(void *b, int c, long len);  // メモリを特定のバイトデータで埋める
 void *memcpy(void *dst, const void *src, long len); // メモリのコピー
 int memcmp(const void *b1, const void *b2, long len); // メモリの比較
