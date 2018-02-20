@@ -13,6 +13,18 @@ int putc(unsigned char c)
 	return serial_send_byte(SERIAL_DEFAULT_DEVICE, c);
 }
 
+// 1文字受信
+// コンソールからの1文字受信
+unsigned char getc(void)
+{
+	unsigned char c = serial_recv_byte(SERIAL_DEFAULT_DEVICE);
+	// 改行コードの変換
+	c = ( c == '\r') ? '\n' : c;
+	// エコーバック
+	putc(c);
+	return c;
+}
+
 // 文字列送信(端末変換なし)
 int puts(unsigned char *str)
 {
@@ -21,6 +33,23 @@ int puts(unsigned char *str)
 		putc(*(str++));
 	}
 	return 0;
+}
+
+// 文字列送信
+int gets(unsigned char *buf)
+{
+	int i = 0;
+	unsigned char c;
+	do {
+		c = getc();
+		if (c == '\n')
+		{
+			// 改行コードを削る
+			c = '\0';
+		}
+		buf[i++] = c;
+	} while(c);
+	return (i - 1);
 }
 
 void *memset(void *b, int c, long len)
