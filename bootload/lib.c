@@ -136,10 +136,10 @@ int putxval(unsigned long value, int column)
 		// 桁数指定がある場合にはカウントする
 		if (column)
 		{
-			column++;
+			column--;
 		}
-		// バッファの内容を出力する
-		puts(p + 1);
 	}
+	// バッファの内容を出力する
+	puts(p + 1);
 	return 0;
 }
