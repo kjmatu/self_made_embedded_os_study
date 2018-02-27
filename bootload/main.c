@@ -1,12 +1,8 @@
 #include "defines.h"
 #include "serial.h"
 #include "xmodem.h"
+#include "elf.h"
 #include "lib.h"
-
-int global_data = 0x10;  // .dataセクション
-int global_bss;  // .bssセクション
-static int static_data = 0x20; // .dataセクション
-static int static_bss; // .bssセクション
 
 static int init(void)
 {
@@ -74,7 +70,7 @@ int main(void)
 
 	while (1)
 	{
-		puts("kzload> ");  // プロンプトの表示
+		puts("kzload > ");  // プロンプトの表示
 		gets(buf);  // シリアルからのコマンド受信
 
 		if (!strcmp(buf, "load")) { // XMODEMでのファイルダウンロード
@@ -91,6 +87,9 @@ int main(void)
 			putxval(size, 0);
 			puts("\n");
 			dump(loadbuf, size);
+		} else if (!strcmp(buf, "run")) {
+			// ELF形式ファイルの実行
+			elf_load(loadbuf);
 		} else {
 			puts("unknown.\n");
 		}
