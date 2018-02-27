@@ -104,12 +104,13 @@ char *elf_load(char *buf)
     // ELFヘッダのチェック
     if (elf_check(header) < 0)
     {
-        return -1;
+        return NULL;
     }
     // セグメント単位でのロード
     if (elf_load_program(header) < 0)
     {
-        return -1;
+        return NULL;
     }
-    return 0;
+    // エントリポイントを返す
+    return (char *)header->entry_point;
 }
