@@ -13,4 +13,5 @@ char *strcpy(char *dst, const char *src); // 文字列のコピー
 int strcmp(const char *s1, const char *s2); // 文字列比較
 int strncmp(const char *s1, const char *s2, int len); // 長さ指定での文字列比較
 int putxval(unsigned long value, int column);  // 数値出力
+
 #endif
