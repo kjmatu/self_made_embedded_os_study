@@ -27,7 +27,6 @@ struct elf_header {
     short section_name_index;  // セクション名を格納するセクション
 };
 
-
 struct elf_program_header {
     long type;  // セグメントの種別
     long offset;  // ファイル中の位置
@@ -38,7 +37,6 @@ struct elf_program_header {
     long flags;  // 各種フラグ
     long align;  // アラインメント
 };
-
 
 // ELFヘッダのチェック
 static int elf_check(struct elf_header *header)
