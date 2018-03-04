@@ -2,3 +2,4 @@ kzload*
 kozos*
 *.o
 *.bak
+.vscode
