@@ -20,7 +20,7 @@ H8WRITE = /mnt/d/workspace/kozos/tools/kz_h8write-v0.2.1/bin/kz_h8write
 H8WRITE_SERDEV = /dev/ttyS6
 
 # コンパイルするソースコード
-OBJS = vector.o startup.o main.o
+OBJS = vector.o startup.o intr.o main.o interrupt.o
 OBJS += lib.o serial.o xmodem.o elf.o
 
 # 生成する実行形式ファイル名
@@ -39,6 +39,7 @@ LFLAGS = -static -T ld.scr -L.
 
 .SUFFIXES: .c .o
 .SUFFIXES: .s .o
+.SUFFIXES: .S .o
 
 all : $(TARGET)
 
@@ -54,6 +55,9 @@ $(TARGET) : $(OBJS)
 
 # アセンブラファイルのアセンブラルール
 .s.o : $<
+		$(CC) -c $(CFLAGS) $<
+
+.S.o : $<
 		$(CC) -c $(CFLAGS) $<
 
 # モトローラSレコードフォーマットへの変換ルール
