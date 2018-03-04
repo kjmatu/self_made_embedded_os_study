@@ -14,7 +14,7 @@ RANLIB = $(BINDIR)/$(ADDNAME)ranlib
 STRIP = $(BINDIR)/$(ADDNAME)strip
 
 # コンパイルするソースコード
-OBJS = startup.o main.o
+OBJS = startup.o main.o interrupt.o
 OBJS += lib.o serial.o
 
 # 生成する実行形式ファイル名
@@ -33,6 +33,7 @@ LFLAGS = -static -T ld.scr -L.
 
 .SUFFIXES: .c .o
 .SUFFIXES: .s .o
+.SUFFIXES: .S .o
 
 all : $(TARGET)
 
@@ -48,6 +49,10 @@ $(TARGET) : $(OBJS)
 
 # アセンブラファイルのアセンブラルール
 .s.o : $<
+		$(CC) -c $(CFLAGS) $<
+
+# *.Sのビルドルールを追加
+.S.o : $<
 		$(CC) -c $(CFLAGS) $<
 
 clean :
