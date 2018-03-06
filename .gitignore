@@ -1,5 +1,6 @@
 kzload*
-kozos*
+kozos.elf
+kozos
 *.o
 *.bak
 .vscode
