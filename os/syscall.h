@@ -7,6 +7,11 @@
 typedef enum {
     KZ_SYSCALL_TYPE_RUN = 0,  // kz_run()のシステムコール番号
     KZ_SYSCALL_TYPE_EXIT,  // kz_exit()のシステムコール番号
+    KZ_SYSCALL_TYPE_WAIT,
+    KZ_SYSCALL_TYPE_SLEEP,
+    KZ_SYSCALL_TYPE_WAKEUP,
+    KZ_SYSCALL_TYPE_GETID,
+    KZ_SYSCALL_TYPE_CHPRI,
 } kz_syscall_type_t;
 
 // システムコール呼び出し時のパラメータ格納域の定義
@@ -16,6 +21,7 @@ typedef struct {
         struct {
             kz_func_t func;  // メイン関数
             char *name;  // スレッド名
+            int priority;  //　優先度
             int stacksize;  // スタックサイズ
             int argc;  // メイン関数に渡す引数の個数
             char **argv;  // メイン関数に渡す引数(argv形式)
@@ -25,6 +31,23 @@ typedef struct {
         struct {
             int dummy;  // パラメータなしだが、空は良くないのでダミーメンバを定義
         } exit;
+        struct {
+            int ret;
+        } wait;
+        struct {
+            int ret;
+        } sleep;
+        struct {
+            kz_thread_id_t id;
+            int ret;
+        } wakeup;
+        struct {
+            kz_thread_id_t ret;
+        } getid;
+        struct {
+            int priority;
+            int ret;
+        } chpri;
     } un;  // 複数のパラメータ領域を同時に利用することはないため共用体で定義
 } kz_syscall_param_t;
 
