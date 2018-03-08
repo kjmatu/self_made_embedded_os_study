@@ -81,3 +81,38 @@ int kzmem_init(void)
     }
     return 0;
 }
+
+// 動的メモリの獲得
+void *kzmem_alloc(int size)
+{
+    int i;
+    kzmem_block *mp;
+    kzmem_pool *p;
+
+    // 要求されたサイズを格納できるメモリプールを検索
+    for (i = 0; i < MEMORY_AREA_NUM; i++)
+    {
+        p = &pool[i];
+        // 要求されたサイズが収まるか？
+        if (size <= p->size - sizeof(kzmem_block))
+        {
+            if (p->free == NULL)
+            {
+                // 解放済み領域がない(メモリブロック不足)
+                kz_sysdown();
+                return NULL;
+            }
+            // 解放済みリンクリストから領域を取得
+            mp = p->free;
+            p->free = p->free->next;
+            mp->next = NULL;
+            // 先頭にはヘッダのメモリブロック構造体があるため
+            // 後続の領域先頭アドレスを返す
+            return mp + 1;
+        }
+    }
+
+    // 指定されたサイズの領域を格納できるメモリプールがない
+    kz_sysdown();
+    return NULL;
+}
