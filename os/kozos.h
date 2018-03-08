@@ -44,4 +44,5 @@ int test09_3_main(int argc, char *argv[]);
 extern kz_thread_id_t test09_1_id;
 extern kz_thread_id_t test09_2_id;
 extern kz_thread_id_t test09_3_id;
+
 #endif // !_KOZOS_H_INCLUDED_
