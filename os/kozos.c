@@ -50,6 +50,35 @@ typedef struct _kz_thread {
     kz_context context;
 } kz_thread;
 
+// メッセージバッファ
+typedef struct _kz_msgbuf {
+    struct _kz_msgbuf *next;
+    // メッセージを送信したスレッド
+    kz_thread *sender;
+    // メッセージパラメータ保存領域
+    struct {
+        int size;
+        char *p;
+    } param;
+} kz_msgbuf;
+
+// メッセージボックス
+typedef struct _kz_msgbox {
+    // 受信待ち状態のスレッド
+    kz_thread *receiver;
+    // メッセージキュー
+    kz_msgbuf *head;
+    kz_msgbuf *tail;
+
+    // H8は16ビットCPUなので32ビット整数に対しての乗算命令がない
+    // よって、構造体のサイズが2の乗数になっていないと、構造体の配列インデックス計算で
+    // 乗算が行われて[___mulsi3がない]などのリンクエラーになる場合がある
+    // 2の乗数ならばシフト演算が行われるので問題なし
+    // 対策としてサイズが2の乗数になるようにダミーメンバで調整ｓるう
+    // 他構造体で同様のエラーが出た場合には、同じ処理をすること
+    long dummy[1];  //　サイズ調整用ダミーメンバ
+} kz_msgbox;
+
 // スレッドのレディーキュー 優先度の個数に合わせて配列化
 static struct {
     kz_thread *head;  // 先頭エントリ
@@ -64,6 +93,9 @@ static kz_thread threads[THREAD_NUM];
 
 // 割り込みハンドラ OSが管理する
 static kz_handler_t handlers[SOFTVEC_TYPE_NUM];
+
+// メッセージボックス
+static kz_msgbox msgboxes[MSGBOX_ID_NUM];
 
 // スレッドディスパッチ用関数
 // 実体はstartup.sにアセンブラで実装
