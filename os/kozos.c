@@ -376,7 +376,7 @@ static void recvmsg(kz_msgbox *mboxp)
         // headがNULLだったらtailもNULLにする
         mboxp->tail = NULL;
     }
-    // 取り出したメッセージ
+    // 取り出したメッセージバッファが指すnextポインタをNULLにする
     mp->next = NULL;
 
     // メッセージを受信するスレッドに返す値を設定する
@@ -397,6 +397,61 @@ static void recvmsg(kz_msgbox *mboxp)
 
     // メッセージバッファの解放
     kzmem_free(mp);
+}
+
+// システムコールの処理(kz_send() : メッセージ送信)
+static int thread_send(kz_msgbox_id_t id, int size, char *p)
+{
+    // メッセージボックスを取得
+    kz_msgbox *mboxp = &msgboxes[id];
+
+    // 現在実行中のスレッドをレディーキューに設定
+    putcurrent();
+
+    // 現在実行中のスレッドを送信元としてメッセージを送信
+    sendmsg(mboxp, current, size, p);
+
+    // 受信待ちスレッドが存在している場合には受信処理を行う
+    if (mboxp->receiver)
+    {
+        // 受信待ちスレッドを動作実行中スレッドに設定
+        current = mboxp->receiver;
+        // 受信待ちスレッドにてメッセージ受信処理を行う
+        recvmsg(mboxp);
+        // 動作実行中スレッドに設定した受信待ちスレッドをレディーキューに接続
+        putcurrent();
+    }
+    return size;
+}
+
+// システムコールの処理(kz_recv() : メッセージ受信)
+static kz_thread_id_t thread_recv(kz_msgbox_id_t id, int *sizep, char **pp)
+{
+    kz_msgbox *mboxp = &msgboxes[id];
+
+    // 他のスレッドがすでに受信待ちしている
+    if (mboxp->receiver)
+    {
+        kz_sysdown();
+    }
+
+    // 動作実行中スレッドを受信待ちスレッドに設定
+    mboxp->receiver = current;
+
+    if (mboxp->head == NULL)
+    {
+        // メッセージボックスにメッセージバッファがないので
+        // スレッドをスリープさせる(システムコールがブロックする)
+        return -1;
+    }
+
+    // メッセージの受信処理
+    recvmsg(mboxp);
+
+    // メッセージを受信できたので受信待ちスレッドをレディー状態にする
+    putcurrent();
+
+    return current->syscall.param->un.recv.ret;
 }
 
 // 割り込みハンドラの登録
