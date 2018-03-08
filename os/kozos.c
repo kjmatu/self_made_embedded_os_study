@@ -595,6 +595,7 @@ void kz_start(kz_func_t func, char *name, int priority, int stacksize, int argc,
     memset(readyque, 0, sizeof(readyque));
     memset(threads, 0, sizeof(threads));
     memset(handlers, 0, sizeof(handlers));
+    memset(msgboxes, 0, sizeof(msgboxes));
 
     // 割り込みハンドラの登録 ソフトウェア割り込みベクタを設定する
     setintr(SOFTVEC_TYPE_SYSCALL, syscall_intr);
