@@ -500,6 +500,12 @@ static void call_functions(kz_syscall_type_t type, kz_syscall_param_t *p)
     case KZ_SYSCALL_TYPE_KMFREE:  // kz_kmfree()
         p->un.kmfree.ret = thread_kmfree(p->un.kmfree.p);
         break;
+    case KZ_SYSCALL_TYPE_SEND:  // kz_send()
+        p->un.send.ret = thread_send(p->un.send.id, p->un.send.size, p->un.send.p);
+        break;
+    case KZ_SYSCALL_TYPE_RECV:  // kz_recv()
+        p->un.recv.ret = thread_recv(p->un.recv.id, p->un.recv.sizep, p->un.recv.pp);
+        break;
     default:
         break;
     }
