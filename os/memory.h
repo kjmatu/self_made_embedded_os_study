@@ -7,7 +7,7 @@ int kzmem_init(void);
 // 動的メモリの獲得
 void *kzmem_alloc(int size);
 
-// メモリの開放
+// メモリの解放
 void kzmem_free(void *mem);
 
 #endif // !_KOZOS_MEMORY_H_INCLUDED_
