@@ -58,6 +58,11 @@ SECTIONS
 	. = ALIGN(4);
 	_end = . ;
 
+	.freearea : {
+		/* BSS領域の後の空き領域に動的メモリとして利用するメモリプールを作成する */
+		_freearea = . ;
+	} > ram
+
 	.userstack : {
 		_userstack = . ;
 	} > userstack
