@@ -116,3 +116,28 @@ void *kzmem_alloc(int size)
     kz_sysdown();
     return NULL;
 }
+
+// メモリの解放
+void kzmem_free(void *mem)
+{
+    int i;
+    kzmem_block *mp;
+    kzmem_pool *p;
+
+    // 領域の直前にあるはずのメモリブロック構造体を取得
+    mp = ((kzmem_block *)mem - 1);
+
+    for (i = 0; i < MEMORY_AREA_NUM; i++)
+    {
+        p = &pool[i];
+        // 同一サイズのメモリプールを検索
+        if (mp->size == p->size)
+        {
+            // 領域を解放済みリンクリストに戻し、再利用可能にする
+            mp->next = p->free;
+            p->free = mp;
+            return;
+        }
+    }
+    kz_sysdown();
+}
