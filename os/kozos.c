@@ -3,6 +3,7 @@
 #include "intr.h"
 #include "interrupt.h"
 #include "syscall.h"
+#include "memory.h"
 #include "lib.h"
 
 #define THREAD_NUM 6  // Task Control Blockの個数
@@ -338,7 +339,7 @@ static void call_functions(kz_syscall_type_t type, kz_syscall_param_t *p)
         p->un.kmalloc.ret = thread_kmalloc(p->un.kmalloc.size);
         break;
     case KZ_SYSCALL_TYPE_KMFREE:  // kz_kmfree()
-        p->un.kmfree.ret = thread_kmfree(p->un.kmfree.size);
+        p->un.kmfree.ret = thread_kmfree(p->un.kmfree.p);
         break;
     default:
         break;
