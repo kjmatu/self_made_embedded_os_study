@@ -30,7 +30,7 @@ int kz_chpri(int priority);
 void *kz_kmalloc(int size);
 
 // 動的メモリの解放
-int *kz_kmfree(void *p);
+int kz_kmfree(void *p);
 
 // ライブラリ関数
 // 初期スレッドを起動し、OSの動作を開始する
