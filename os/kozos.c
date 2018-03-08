@@ -327,6 +327,78 @@ static int thread_kmfree(char *p)
     return 0;
 }
 
+// メッセージ送信処理
+static void sendmsg(kz_msgbox *mboxp, kz_thread *thp, int size, char *p)
+{
+    kz_msgbuf *mp;
+
+    // メッセージバッファの作成
+    mp = (kz_msgbuf *)kzmem_alloc(sizeof(*mp));
+    if (mp == NULL)
+    {
+        kz_sysdown();
+    }
+
+    // 各種パラメータ設定
+    mp->next = NULL;
+    mp->sender = thp;  // 送信元スレッドID
+    mp->param.size = size;  // kz_send() 呼び出し時の第2引数
+    mp->param.p = p;  // kz_send() 呼び出し時の第3引数
+
+    // メッセージボックスの末尾にメッセージを接続する
+    if (mboxp->tail)  // メッセージボックスのtailがあったら
+    {
+        // 今のメッセージボックスのtailにあるメッセージバッファが指しているnextポインタをmpに設定する
+        mboxp->tail->next = mp;
+    }
+    else  // メッセージボックスのtailがなかったら
+    {
+        // 新規作成されたメッセージボックスをheadに設定
+        mboxp->head = mp;
+    }
+    // メッセージボックスのtailを新規作成されたメッセージバッファのポインタに設定する
+    mboxp->tail = mp;
+}
+
+// メッセージ受信処理
+static void recvmsg(kz_msgbox *mboxp)
+{
+    kz_msgbuf *mp;
+    kz_syscall_param_t *p;
+
+    // メッセージボックスの先頭にあるメッセージバッファに抜き出す
+    mp = mboxp->head;
+
+    // メッセージバッファをheadに移動
+    mboxp->head = mp->next;
+    if (mboxp->head == NULL)
+    {
+        // headがNULLだったらtailもNULLにする
+        mboxp->tail = NULL;
+    }
+    // 取り出したメッセージ
+    mp->next = NULL;
+
+    // メッセージを受信するスレッドに返す値を設定する
+    // kz_recv()の戻り値としてスレッドに返す値を設定する
+    p = mboxp->receiver->syscall.param;
+    p->un.recv.ret = (kz_thread_id_t)mp->sender;
+    if (p->un.recv.sizep)
+    {
+        *(p->un.recv.sizep) = mp->param.size;
+    }
+    if (p->un.recv.pp)
+    {
+        *(p->un.recv.pp) = mp->param.p;
+    }
+
+    // 受信待ちスレッドはいなくなったのでNULLに戻す
+    mboxp->receiver = NULL;
+
+    // メッセージバッファの解放
+    kzmem_free(mp);
+}
+
 // 割り込みハンドラの登録
 static int setintr(softvec_type_t type, kz_handler_t handler)
 {
