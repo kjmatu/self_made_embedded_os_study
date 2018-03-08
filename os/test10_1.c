@@ -16,13 +16,13 @@ int test10_1_main(int argc, char *argv[])
         p2 = kz_kmalloc(i);
 
         // 確保した領域を特定のパターンで埋める
-        for (j = 0; j < ; j++)
+        for (j = 0; j < i - 1; j++)
         {
             p1[j] = 'a';
             p2[j] = 'b';
         }
-        p1[j] = '0';
-        p2[j] = '0';
+        p1[j] = '\0';
+        p2[j] = '\0';
 
         // メモリ領域の内容をコンソールに出力
         putxval((unsigned long)p1, 8);
