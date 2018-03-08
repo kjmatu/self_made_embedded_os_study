@@ -27,7 +27,7 @@ typedef struct _kzmem_pool
 static kzmem_pool pool[] = {
     // 16バイト、32バイト、64バイトの3種類のメモリプールを定義
     {16, 8, NULL}, {32, 8, NULL}, {64, 4, NULL},
-}
+};
 
 // メモリプールの種類の個数
 #define MEMORY_AREA_NUM (sizeof(pool) / sizeof(*pool))
