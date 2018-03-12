@@ -20,7 +20,7 @@ static struct consreg {
 
     // kozos.cのkz_msgboxと同様の理由でダミーメンバでサイズ調整する
     long dummy[3];
-} consreg[CONS_BUFFER_SIZE];  // 複数のコンソールを管理可能にするために配列にする
+} consreg[CONSDRV_DEVICE_NUM];  // 複数のコンソールを管理可能にするために配列にする
 
 // 以下の関数(send_char(), send_string())は割り込み処理とスレッドから呼ばれるが
 // 送信バッファを操作しており、再入不可のためスレッドから呼び出す場合は排他のため割り込み禁止状態で呼ぶこと
@@ -159,32 +159,33 @@ static int consdrv_init(void)
 static int consdrv_command(struct consreg *cons, kz_thread_id_t id, int index, int size, char *command)
 {
     switch(command[0]) {
-        // コンソールドライバの使用開始
-        case CONSDRV_CMD_USE:
-            cons->id = id;
-            cons->index = command[1] - '0';
-            // 送信バッファを確保
-            cons->send_buf = kz_kmalloc(CONS_BUFFER_SIZE);
-            // 受信バッファを確保
-            cons->recv_buf = kz_kmalloc(CONS_BUFFER_SIZE);
-            cons->send_len = 0;
-            cons->recv_len = 0;
-            serial_init(cons->index);
-            // 受信割り込み有効化 受信開始
-            serial_intr_recv_enable(cons->index);
+    // コンソールドライバの使用開始
+    case CONSDRV_CMD_USE:
+        cons->id = id;
+        cons->index = command[1] - '0';
+        // 送信バッファを確保
+        cons->send_buf = kz_kmalloc(CONS_BUFFER_SIZE);
+        // 受信バッファを確保
+        cons->recv_buf = kz_kmalloc(CONS_BUFFER_SIZE);
+        cons->send_len = 0;
+        cons->recv_len = 0;
+        serial_init(cons->index);
+        // 受信割り込み有効化 受信開始
+        serial_intr_recv_enable(cons->index);
+        break;
 
-        // コンソールへの文字列出力
-        case CONSDRV_CMD_WRITE:
-            // send_string()では送信バッファを操作しており再入不可なので排他のために
-            // 割り込み禁止にして呼び出す。
-            INTR_DISABLE;
-            // 文字列の送信
-            send_string(cons, command + 1, size - 1);
-            INTR_ENABLE;
-            break;
+    // コンソールへの文字列出力
+    case CONSDRV_CMD_WRITE:
+        // send_string()では送信バッファを操作しており再入不可なので排他のために
+        // 割り込み禁止にして呼び出す。
+        INTR_DISABLE;
+        // 文字列の送信
+        send_string(cons, command + 1, size - 1);
+        INTR_ENABLE;
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
     return 0;
 }
@@ -198,7 +199,6 @@ int consdrv_main(int argc, char *argv[])
     consdrv_init();
     // 割り込みハンドラを設定
     kz_setintr(SOFTVEC_TYPE_SERINTR, consdrv_intr);
-
     while (1)
     {
         // 他スレッドからのコマンド受付
