@@ -454,8 +454,8 @@ static kz_thread_id_t thread_recv(kz_msgbox_id_t id, int *sizep, char **pp)
     return current->syscall.param->un.recv.ret;
 }
 
-// 割り込みハンドラの登録
-static int setintr(softvec_type_t type, kz_handler_t handler)
+// システムコールの処理(kz_setintr() : 割り込みハンドラの登録)
+static int thread_setintr(softvec_type_t type, kz_handler_t handler)
 {
     static void thread_intr(softvec_type_t type, unsigned long sp);
 
@@ -463,6 +463,8 @@ static int setintr(softvec_type_t type, kz_handler_t handler)
     // OS割り込み処理の入り口となる関数を登録する
     softvec_setintr(type, thread_intr);
     handlers[type] = handler;  // OS側から呼び出す割り込みハンドラを登録
+    // 処理後にレディーキューに接続しなおす
+    putcurrent();
     return 0;
 }
 
