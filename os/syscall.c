@@ -90,6 +90,7 @@ int kz_send(kz_msgbox_id_t id, int size, char *p)
 {
     kz_syscall_param_t param;
     param.un.send.id = id;
+	param.un.send.size = size;
     param.un.send.p = p;
     kz_syscall(KZ_SYSCALL_TYPE_SEND, &param);
     return param.un.send.ret;
@@ -143,6 +144,7 @@ int kx_send(kz_msgbox_id_t id, int size, char *p)
 {
     kz_syscall_param_t param;
     param.un.send.id = id;
+    param.un.send.size = size;
     param.un.send.p = p;
     kz_srvcall(KZ_SYSCALL_TYPE_SEND, &param);
     return param.un.send.ret;
