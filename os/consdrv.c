@@ -184,7 +184,7 @@ static int consdrv_command(struct consreg *cons, kz_thread_id_t id, int index, i
             break;
 
         default:
-            break
+            break;
     }
     return 0;
 }
