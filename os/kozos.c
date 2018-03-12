@@ -22,10 +22,10 @@ typedef struct _kz_context {
 typedef struct _kz_thread {
     // レディーキューへの接続に利用するnextポインタ
     struct _kz_thread *next;
+    // スレッド名
+    char name[THREAD_NAME_SIZE + 1];
     // 優先度
     int priority;
-    // スレッド名
-    char name[THREAD_NAME_SIZE];
     // スレッドのスタック
     char *stack;
     // 各種フラグ
@@ -295,7 +295,7 @@ static int thread_wakeup(kz_thread_id_t id)
 static  kz_thread_id_t thread_getid(void)
 {
     putcurrent();
-    return (kz_thread_id_t) current;  // TCBのアドレスがスレッドIDとなる
+    return (kz_thread_id_t)current;  // TCBのアドレスがスレッドIDとなる
 }
 
 // システムコールの処理(kz_chpri() : スレッドの優先度変更)
