@@ -583,7 +583,8 @@ static void thread_intr(softvec_type_t type, unsigned long sp)
 
     // 割り込みごとの処理を実行する
     // SOFTVEC_TYPE_SYSCALL, SOFTVEC_TYPE_SOFTERRの場合は
-    // syscall_intr(),softerr_intr()がハンドラに登録されているのでそれらが実行されるd
+    // syscall_intr(),softerr_intr()がハンドラに登録されているのでそれらが実行される
+    // それ以外の場合はkz_setintr()によってユーザー登録されたハンドラが実行される
     if (handlers[type])
     {
         // 割り込みに対応した各ハンドラを実行する
@@ -614,8 +615,8 @@ void kz_start(kz_func_t func, char *name, int priority, int stacksize, int argc,
     memset(msgboxes, 0, sizeof(msgboxes));
 
     // 割り込みハンドラの登録 ソフトウェア割り込みベクタを設定する
-    setintr(SOFTVEC_TYPE_SYSCALL, syscall_intr);
-    setintr(SOFTVEC_TYPE_SOFTERR, softerr_intr);
+    thread_setintr(SOFTVEC_TYPE_SYSCALL, syscall_intr);  // システムコール
+    thread_setintr(SOFTVEC_TYPE_SOFTERR, softerr_intr);  // ダウン要因発生
 
     // システムコール発行不可なので直接関数を呼び出してスレッドを作成する
     current = (kz_thread *)thread_run(func, name, priority, stacksize, argc, argv);
