@@ -64,3 +64,87 @@ static void send_string(struct consreg *cons, char *str, int len)
         send_char(cons);
     }
 }
+
+// 以下は割り込みハンドラから呼ばれる割り込み処理であり、非同期で呼ばれるので
+// ライブラリ関数などを呼び出す場合には注意が必要
+// 基本として以下のいずれかに当てはまる関数しか呼び出してはいけない
+// + 再入可能
+// + スレッドから呼ばれない
+// + スレッドから呼ばれるが割り込み禁止で呼び出している
+// また、非コンテキスト状態で呼ばれるためシステムコールは利用してはいけない
+// (サービスコールを利用すること)
+static int consdrv_intrproc(struct consreg *cons)
+{
+    unsigned char c;
+    char *p;
+
+    // 受信割り込み
+    if (serial_is_recv_enable(cons->index))
+    {
+        c = serial_recv_byte(cons->index);
+        // 改行コード変換 \r -> \n
+        if (c == '\r')
+        {
+            c = '\n';
+        }
+
+        // エコーバック処理
+        send_string(cons, &c, 1);
+
+        if (cons->id)
+        {
+            if (c != '\n')
+            {
+                // 改行でないなら、受信バッファにバッファリング
+                // 改行まで受信バッファに保存する
+                cons->recv_buf[cons->recv_len++] = c;
+            }
+            else
+            {
+                // Enterが押されたらバッファの内容をコマンド処理スレッドに通知する
+                // 割り込みハンドラなのでサービスコールを利用する
+                p = kx_kmalloc(CONS_BUFFER_SIZE);
+                memcpy(p, cons->recv_buf, cons->recv_len);
+                kx_send(MSGBOX_ID_CONSINPUT, cons->recv_len, p);
+                cons->recv_len = 0;
+            }
+        }
+    }
+
+    // 送信割り込み
+    if (serial_is_send_enable(cons->index))
+    {
+        if (!cons->id || !cons->send_len)
+        {
+            // 送信データがないならば送信処理終了
+            serial_intr_send_disable(cons->index);
+        }
+        else
+        {
+            // 送信データがあるならば、引き続き送信
+            send_char(cons);
+        }
+    }
+
+    return 0;
+}
+
+// 割り込みハンドラ
+static void consdrv_intr(void)
+{
+    int i;
+    struct consreg *cons;
+
+    for (i = 0; i < CONSDRV_DEVICE_NUM; i++)
+    {
+        cons = &consreg[i];
+        if (cons->id)
+        {
+            if (serial_is_send_enable(cons->index) || serial_is_recv_enable(cons->index))
+            {
+                // 送信・受信割り込みが発生してるならば、割り込み処理関数を呼び出す
+                consdrv_intrproc(cons);
+            }
+        }
+    }
+}
