@@ -148,3 +148,43 @@ static void consdrv_intr(void)
         }
     }
 }
+
+static int consdrv_init(void)
+{
+    memset(consreg, 0, sizeof(consreg));
+    return 0;
+}
+
+// スレッドからの要求を処理する
+static int consdrv_command(struct consreg *cons, kz_thread_id_t id, int index, int size, char *command)
+{
+    switch(command[0]) {
+        // コンソールドライバの使用開始
+        case CONSDRV_CMD_USE:
+            cons->id = id;
+            cons->index = command[1] - '0';
+            // 送信バッファを確保
+            cons->send_buf = kz_kmalloc(CONS_BUFFER_SIZE);
+            // 受信バッファを確保
+            cons->recv_buf = kz_kmalloc(CONS_BUFFER_SIZE);
+            cons->send_len = 0;
+            cons->recv_len = 0;
+            serial_init(cons->index);
+            // 受信割り込み有効化 受信開始
+            serial_intr_recv_enable(cons->index);
+
+        // コンソールへの文字列出力
+        case CONSDRV_CMD_WRITE:
+            // send_string()では送信バッファを操作しており再入不可なので排他のために
+            // 割り込み禁止にして呼び出す。
+            INTR_DISABLE;
+            // 文字列の送信
+            send_string(cons, command + 1, size - 1);
+            INTR_ENABLE;
+            break;
+
+        default:
+            break
+    }
+    return 0;
+}
