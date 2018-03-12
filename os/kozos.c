@@ -509,7 +509,7 @@ static void call_functions(kz_syscall_type_t type, kz_syscall_param_t *p)
         p->un.recv.ret = thread_recv(p->un.recv.id, p->un.recv.sizep, p->un.recv.pp);
         break;
     case KZ_SYSCALL_TYPE_SETINTR:  // kz_setintr()
-        p->un.setintr.ret = thread_intr(p->un.setintr.type, p->un.setintr.handler);
+        p->un.setintr.ret = thread_setintr(p->un.setintr.type, p->un.setintr.handler);
         break;
     default:
         break;
