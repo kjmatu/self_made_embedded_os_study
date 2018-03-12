@@ -2,6 +2,7 @@
 
 #define _KOZOS_SYSCALL_H_INCLUDED_
 #include "defines.h"
+#include "interrupt.h"
 
 // システムコール番号の定義
 typedef enum {
