@@ -41,7 +41,6 @@ int command_main(int argc, char *argv[])
 
     // コンソールドライバスレッドにコンソールの初期化依頼をする
     send_use(SERIAL_DEFAULT_DEVICE);
-
     while (1)
     {
         // プロンプト表示
@@ -59,7 +58,7 @@ int command_main(int argc, char *argv[])
         }
         else
         {
-            send_write("unkown.\n");
+            send_write("unknown.\n");
         }
         // メッセージにより受信した領域(送信元で確保されたもの)を解放
         kz_kmfree(p);
