@@ -648,3 +648,10 @@ void kz_syscall(kz_syscall_type_t type, kz_syscall_param_t *param)
     // トラップ割り込み発行
     asm volatile("trapa #0");
 }
+
+// サービスコール呼び出し用ライブラリ関数
+void kz_srvcall(kz_syscall_type_t type, kz_syscall_param_t *param)
+{
+    // サービスコールは単なる関数呼び出し
+    srvcall_proc(type, param);
+}
