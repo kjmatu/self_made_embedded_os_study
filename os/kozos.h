@@ -37,7 +37,10 @@ int kz_kmfree(void *p);
 int kz_send(kz_msgbox_id_t id, int size, char *p);
 
 // メッセージ受信
-kz_thread_id_t kz_recv(kz_msgbox_id_t id, int *sizep, char **p);
+kz_thread_id_t kz_recv(kz_msgbox_id_t id, int *sizep, char **pp);
+
+// 割り込みハンドラ登録
+int kz_setintr(softvec_type_t type, kz_handler_t handler);
 
 // サービスコール
 // スリープ状態のスレッドをレディーキューにつなぎ直して、レディ状態に戻す
