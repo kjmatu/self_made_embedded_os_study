@@ -12,7 +12,7 @@ static void send_use(int index)
     p = kz_kmalloc(3);
     p[0] = '0';
     p[1] = CONSDRV_CMD_USE;  // 初期化コマンドを設定
-    p[2] = '0' + idnex;
+    p[2] = '0' + index;
     // コンソールドライバスレッドに送信
     kz_send(MSGBOX_ID_CONSOUTPUT, 3, p);
 }
@@ -52,7 +52,7 @@ int command_main(int argc, char *argv[])
         p[size] = '\0';
 
         // echoコマンド
-        if (!strcmp(p, "echo", 4))
+        if (!strncmp(p, "echo", 4))
         {
             send_write(p + 4);  // echoに続く文字列を出力する
             send_write("\n");
@@ -64,6 +64,5 @@ int command_main(int argc, char *argv[])
         // メッセージにより受信した領域(送信元で確保されたもの)を解放
         kz_kmfree(p);
     }
-
     return 0;
 }
