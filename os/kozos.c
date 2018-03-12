@@ -22,10 +22,10 @@ typedef struct _kz_context {
 typedef struct _kz_thread {
     // レディーキューへの接続に利用するnextポインタ
     struct _kz_thread *next;
+    // スレッド名
+    char name[THREAD_NAME_SIZE + 1];
     // 優先度
     int priority;
-    // スレッド名
-    char name[THREAD_NAME_SIZE];
     // スレッドのスタック
     char *stack;
     // 各種フラグ
@@ -295,7 +295,7 @@ static int thread_wakeup(kz_thread_id_t id)
 static  kz_thread_id_t thread_getid(void)
 {
     putcurrent();
-    return (kz_thread_id_t) current;  // TCBのアドレスがスレッドIDとなる
+    return (kz_thread_id_t)current;  // TCBのアドレスがスレッドIDとなる
 }
 
 // システムコールの処理(kz_chpri() : スレッドの優先度変更)
@@ -454,8 +454,8 @@ static kz_thread_id_t thread_recv(kz_msgbox_id_t id, int *sizep, char **pp)
     return current->syscall.param->un.recv.ret;
 }
 
-// 割り込みハンドラの登録
-static int setintr(softvec_type_t type, kz_handler_t handler)
+// システムコールの処理(kz_setintr() : 割り込みハンドラの登録)
+static int thread_setintr(softvec_type_t type, kz_handler_t handler)
 {
     static void thread_intr(softvec_type_t type, unsigned long sp);
 
@@ -463,6 +463,8 @@ static int setintr(softvec_type_t type, kz_handler_t handler)
     // OS割り込み処理の入り口となる関数を登録する
     softvec_setintr(type, thread_intr);
     handlers[type] = handler;  // OS側から呼び出す割り込みハンドラを登録
+    // 処理後にレディーキューに接続しなおす
+    putcurrent();
     return 0;
 }
 
@@ -506,6 +508,9 @@ static void call_functions(kz_syscall_type_t type, kz_syscall_param_t *p)
     case KZ_SYSCALL_TYPE_RECV:  // kz_recv()
         p->un.recv.ret = thread_recv(p->un.recv.id, p->un.recv.sizep, p->un.recv.pp);
         break;
+    case KZ_SYSCALL_TYPE_SETINTR:  // kz_setintr()
+        p->un.setintr.ret = thread_setintr(p->un.setintr.type, p->un.setintr.handler);
+        break;
     default:
         break;
     }
@@ -519,6 +524,17 @@ static void syscall_proc(kz_syscall_type_t type, kz_syscall_param_t *p)
     // 処理関数の内部でputcurrent()を行う必要がある
     getcurrent();  // カレントスレッドをレディーキューから外す
     call_functions(type, p);  // システムコールの処理関数を呼び出す
+}
+
+// サービスコールの処理
+static void srvcall_proc(kz_syscall_type_t  type, kz_syscall_param_t *p)
+{
+    // システムコールとサービスコールの処理関数の内部でシステムコールを実行したスレッドIDを得るために
+    // currentを参照している部分があり(例 thread_send()等)、currentが残っていると誤動作するためにNULLに設定する
+    // サービスコールはthread_intrvec()内部の割り込みハンドラ呼び出しの延長で呼ばれているはずなので
+    // 呼び出し後にthread_intrvec()でスケジューリング処理が行われ、currentは再設定される
+    current = NULL;
+    call_functions(type, p);
 }
 
 // スレッドのスケジューリング
@@ -567,7 +583,8 @@ static void thread_intr(softvec_type_t type, unsigned long sp)
 
     // 割り込みごとの処理を実行する
     // SOFTVEC_TYPE_SYSCALL, SOFTVEC_TYPE_SOFTERRの場合は
-    // syscall_intr(),softerr_intr()がハンドラに登録されているのでそれらが実行されるd
+    // syscall_intr(),softerr_intr()がハンドラに登録されているのでそれらが実行される
+    // それ以外の場合はkz_setintr()によってユーザー登録されたハンドラが実行される
     if (handlers[type])
     {
         // 割り込みに対応した各ハンドラを実行する
@@ -598,8 +615,8 @@ void kz_start(kz_func_t func, char *name, int priority, int stacksize, int argc,
     memset(msgboxes, 0, sizeof(msgboxes));
 
     // 割り込みハンドラの登録 ソフトウェア割り込みベクタを設定する
-    setintr(SOFTVEC_TYPE_SYSCALL, syscall_intr);
-    setintr(SOFTVEC_TYPE_SOFTERR, softerr_intr);
+    thread_setintr(SOFTVEC_TYPE_SYSCALL, syscall_intr);  // システムコール
+    thread_setintr(SOFTVEC_TYPE_SOFTERR, softerr_intr);  // ダウン要因発生
 
     // システムコール発行不可なので直接関数を呼び出してスレッドを作成する
     current = (kz_thread *)thread_run(func, name, priority, stacksize, argc, argv);
@@ -630,4 +647,11 @@ void kz_syscall(kz_syscall_type_t type, kz_syscall_param_t *param)
 
     // トラップ割り込み発行
     asm volatile("trapa #0");
+}
+
+// サービスコール呼び出し用ライブラリ関数
+void kz_srvcall(kz_syscall_type_t type, kz_syscall_param_t *param)
+{
+    // サービスコールは単なる関数呼び出し
+    srvcall_proc(type, param);
 }

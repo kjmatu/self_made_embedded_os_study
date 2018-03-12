@@ -38,7 +38,7 @@ struct h8_3069f_sci
 #define H8_3069F_SCI_SCR_RE (1<<4)  //受信有効
 #define H8_3069F_SCI_SCR_TE (1<<5)  //送信有効
 #define H8_3069F_SCI_SCR_RIE (1<<6)  //受信割り込み有効
-#define H8_3069F_SCI_SCR_TIE (1<<6)  //送信割り込み有効
+#define H8_3069F_SCI_SCR_TIE (1<<7)  //送信割り込み有効
 
 // SSR各ビット定義
 #define H8_3069F_SCI_SSR_MPBT (1<<0)
