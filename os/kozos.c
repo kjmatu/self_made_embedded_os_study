@@ -526,6 +526,17 @@ static void syscall_proc(kz_syscall_type_t type, kz_syscall_param_t *p)
     call_functions(type, p);  // システムコールの処理関数を呼び出す
 }
 
+// サービスコールの処理
+static void srvcall_proc(kz_syscall_type_t  type, kz_syscall_param_t *p)
+{
+    // システムコールとサービスコールの処理関数の内部でシステムコールを実行したスレッドIDを得るために
+    // currentを参照している部分があり(例 thread_send()等)、currentが残っていると誤動作するためにNULLに設定する
+    // サービスコールはthread_intrvec()内部の割り込みハンドラ呼び出しの延長で呼ばれているはずなので
+    // 呼び出し後にthread_intrvec()でスケジューリング処理が行われ、currentは再設定される
+    current = NULL;
+    call_functions(type, p);
+}
+
 // スレッドのスケジューリング
 static void schedule(void)
 {
