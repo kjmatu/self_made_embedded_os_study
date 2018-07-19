@@ -59,7 +59,7 @@ void *memset(void *b, int c, long len)
 	for (p = b; len > 0; len--)
 	{
 		// sizeof(char)づつポインタを移動させる
-		// TODO: char型(?bit)にint型(16bit)を代入しているがいいのか？
+		// TODO: char型(8bit)にint型(16bit)を代入しているがいいのか？
 		*(p++) = c;
 	}
 	return b;
