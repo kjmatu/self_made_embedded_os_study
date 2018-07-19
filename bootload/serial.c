@@ -18,7 +18,7 @@ struct h8_3069f_sci
 	volatile uint8 scmr; // ICカード(スマートカード)インタフェース切り替え
 };
 
-// SMR各ビット定義
+// SMR(シリアル通信モード設定)各ビット定義
 #define H8_3069F_SCI_SMR_CKS_PER1 (0<<0)
 #define H8_3069F_SCI_SMR_CKS_PER4 (1<<0)
 #define H8_3069F_SCI_SMR_CKS_PER16 (2<<0)
@@ -30,7 +30,7 @@ struct h8_3069f_sci
 #define H8_3069F_SCI_SMR_CHR (1<<6)
 #define H8_3069F_SCI_SMR_CA (1<<7)
 
-// SCR各ビット定義
+// SCR(送受信の有効無効)各ビット定義
 #define H8_3069F_SCI_SCR_CKE0 (1<<0)
 #define H8_3069F_SCI_SCR_CKE1 (1<<1)
 #define H8_3069F_SCI_SCR_TEIE (1<<2)
@@ -38,9 +38,9 @@ struct h8_3069f_sci
 #define H8_3069F_SCI_SCR_RE (1<<4)  //受信有効
 #define H8_3069F_SCI_SCR_TE (1<<5)  //送信有効
 #define H8_3069F_SCI_SCR_RIE (1<<6)  //受信割り込み有効
-#define H8_3069F_SCI_SCR_TIE (1<<6)  //送信割り込み有効
+#define H8_3069F_SCI_SCR_TIE (1<<7)  //送信割り込み有効
 
-// SSR各ビット定義
+// SSR(送信完了 受信完了などを表す)各ビット定義
 #define H8_3069F_SCI_SSR_MPBT (1<<0)
 #define H8_3069F_SCI_SSR_MPB (1<<1)
 #define H8_3069F_SCI_SSR_TEND (1<<2)
@@ -66,7 +66,7 @@ int serial_init(int index)
 	volatile struct h8_3069f_sci *sci = regs[index].sci;
 
 	sci->scr = 0;
-	sci->smr = 0;
+	sci->smr = 0;  // データ長8bit ストップビット1bit パリティ無し
 	//20MHzのクロックから9600bpsを生成(25MHzの場合は80にする)
 	sci->brr = 64;
 	//送受信可能
@@ -89,8 +89,9 @@ int serial_send_byte(int index, unsigned char c)
 
 	// 送信可能になるまで待つ
 	while(!serial_is_send_enable(index));
+	// 送信文字をシリアルコントローラーに書き込む
 	sci->tdr = c;
-	// 送信開始
+	// 送信開始 送信未完了状態にしてSCIに送信開始を依頼
 	sci->ssr &= ~H8_3069F_SCI_SSR_TDRE;
 	return 0;
 }
