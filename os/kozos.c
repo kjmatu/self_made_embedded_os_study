@@ -12,7 +12,7 @@
 #define KZ_THREAD_FLAG_READY (1 << 0)  // レディーフラグ
 
 // スレッドコンテキスト
-// スレッドコンテキスト保存用の構造体定義
+// スレッドコンテキスト保存用の構造体定義[4]
 typedef struct _kz_context {
     // 汎用レジスタはスタックに保存されるので、TCBにコンテキストとして保存するのはスタックポインタのみ
     uint32 sp;  //  スタックポインタ
@@ -20,34 +20,35 @@ typedef struct _kz_context {
 
 // タスクコントロールブロック(TCB)
 typedef struct _kz_thread {
-    // レディーキューへの接続に利用するnextポインタ
+    // レディーキューへの接続に利用するnextポインタ[4]
     struct _kz_thread *next;
-    // スレッド名
+    // スレッド名[16]
     char name[THREAD_NAME_SIZE + 1];
-    // 優先度
+    // 優先度[4]
     int priority;
-    // スレッドのスタック
+    // スレッドのスタック[4]
     char *stack;
-    // 各種フラグ
+    // 各種フラグ[4]
     uint32 flags;
-    // スレッドのスタートアップ(thread_init())に渡すパラメータ
+    // スレッドのスタートアップ(thread_init())に渡すパラメータ[]
     struct {
-        // スレッドのメイン関数
+        // スレッドのメイン関数[4]
         kz_func_t func;
-        // メイン関数に渡すargc
+        // メイン関数に渡すargc[4]
         int argc;
-        // メイン関数に渡すargv
+        // メイン関数に渡すargv[4]
         char **argv;
     } init;
 
     // システムコール用のバッファ
-    // システムコール発行時に利用するパラメータ領域
+    // システムコール発行時に利用するパラメータ領域[4][4]
     struct {
         kz_syscall_type_t type;
         kz_syscall_param_t *param;
     } syscall;
 
     kz_context context;
+    char dummy[8];
 } kz_thread;
 
 // メッセージバッファ
@@ -256,8 +257,8 @@ static int thread_exit(void)
 {
     // 本来ならスタックも開放して再利用できるようにすべきだが省略
     // このため頻繁にスレッドを生成、消去はできない
-    puts(current->name);
-    puts(" EXIT.\n");
+    puts((unsigned char *)current->name);
+    puts((unsigned char *)" EXIT.\n");
     // TCBクリア
     memset(current, 0, sizeof(*current));
     return 0;
@@ -454,10 +455,57 @@ static kz_thread_id_t thread_recv(kz_msgbox_id_t id, int *sizep, char **pp)
     return current->syscall.param->un.recv.ret;
 }
 
+// スレッドのスケジューリング
+static void schedule(void)
+{
+    int i;
+
+    // 優先順位の高い順(数値の小さい順)にレディーキューを見て
+    // 動作可能なスレッドを検索する
+    for (i = 0; i < PRIORITY_NUM; i++)
+    {
+        if (readyque[i].head)  // 見つかった
+        {
+            break;
+        }
+    }
+
+    if (i == PRIORITY_NUM)
+    {
+        // 見つからなかった
+        kz_sysdown();
+    }
+    current = readyque[i].head;  // カレントスレッドに設定する
+}
+
+// 割り込み処理の入り口関数
+static void thread_intr(softvec_type_t type, unsigned long sp)
+{
+    // カレントスレッドのコンテキストを保存する
+    current->context.sp = sp;
+
+    // 割り込みごとの処理を実行する
+    // SOFTVEC_TYPE_SYSCALL, SOFTVEC_TYPE_SOFTERRの場合は
+    // syscall_intr(),softerr_intr()がハンドラに登録されているのでそれらが実行される
+    // それ以外の場合はkz_setintr()によってユーザー登録されたハンドラが実行される
+    if (handlers[type])
+    {
+        // 割り込みに対応した各ハンドラを実行する
+        handlers[type]();
+    }
+    schedule();  // 次に動作するスレッドのスケジューリング
+
+    // スレッドのディスパッチ
+    // dispatch()関数の本体はstartup.sにありアセンブラで記述
+    dispatch(&current->context);
+    // ディスパッチ後はそのスレッドの動作に入るのでここには来ない
+}
+
+
 // システムコールの処理(kz_setintr() : 割り込みハンドラの登録)
 static int thread_setintr(softvec_type_t type, kz_handler_t handler)
 {
-    static void thread_intr(softvec_type_t type, unsigned long sp);
+    void thread_intr(softvec_type_t type, unsigned long sp);
 
     // 割り込みを受け付けるためにソフトウェア割り込みベクタに
     // OS割り込み処理の入り口となる関数を登録する
@@ -537,29 +585,6 @@ static void srvcall_proc(kz_syscall_type_t  type, kz_syscall_param_t *p)
     call_functions(type, p);
 }
 
-// スレッドのスケジューリング
-static void schedule(void)
-{
-    int i;
-
-    // 優先順位の高い順(数値の小さい順)にレディーキューを見て
-    // 動作可能なスレッドを検索する
-    for (i = 0; i < PRIORITY_NUM; i++)
-    {
-        if (readyque[i].head)  // 見つかった
-        {
-            break;
-        }
-    }
-
-    if (i == PRIORITY_NUM)
-    {
-        // 見つからなかった
-        kz_sysdown();
-    }
-    current = readyque[i].head;  // カレントスレッドに設定する
-}
-
 // システムコールの呼び出し
 static void syscall_intr(void)
 {
@@ -569,33 +594,10 @@ static void syscall_intr(void)
 // ソフトウェアエラーの発生
 static void softerr_intr(void)
 {
-    puts(current->name);
-    puts(" DOWN.\n");
+    puts((unsigned char *)current->name);
+    puts((unsigned char *)" DOWN.\n");
     getcurrent();  // レディーキューから外す
     thread_exit();  // スレッドを終了
-}
-
-// 割り込み処理の入り口関数
-static void thread_intr(softvec_type_t type, unsigned long sp)
-{
-    // カレントスレッドのコンテキストを保存する
-    current->context.sp = sp;
-
-    // 割り込みごとの処理を実行する
-    // SOFTVEC_TYPE_SYSCALL, SOFTVEC_TYPE_SOFTERRの場合は
-    // syscall_intr(),softerr_intr()がハンドラに登録されているのでそれらが実行される
-    // それ以外の場合はkz_setintr()によってユーザー登録されたハンドラが実行される
-    if (handlers[type])
-    {
-        // 割り込みに対応した各ハンドラを実行する
-        handlers[type]();
-    }
-    schedule();  // 次に動作するスレッドのスケジューリング
-
-    // スレッドのディスパッチ
-    // dispatch()関数の本体はstartup.sにありアセンブラで記述
-    dispatch(&current->context);
-    // ディスパッチ後はそのスレッドの動作に入るのでここには来ない
 }
 
 // 初期スレッドを起動し、OSの動作を開始する
@@ -629,7 +631,7 @@ void kz_start(kz_func_t func, char *name, int priority, int stacksize, int argc,
 // OS内部で致命的エラーが発生した場合にはこの関数を呼ぶ
 void kz_sysdown(void)
 {
-    puts("system error!\n");
+    puts((unsigned char *)"system error!\n");
     while (1)
     {
         // 無限ループに入って停止
