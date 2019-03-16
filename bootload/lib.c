@@ -169,6 +169,6 @@ int putxval(unsigned long value, int column)
 		}
 	}
 	// バッファの内容を出力する
-	puts(p + 1);
+	puts((unsigned char*)p + 1);
 	return 0;
 }

@@ -42,33 +42,33 @@ struct elf_program_header {
 static int elf_check(struct elf_header *header)
 {
     if (memcmp(header->id.magic, "\x7f" "ELF", 4)) {
-        puts("[ELF Header] Magic number is not found\n");
+        puts((unsigned char *)"[ELF Header] Magic number is not found\n");
         return -1;
     };
     if (header->id.class != 1) {
-        puts("[ELF Header] Class is not ELF32\n");
+        puts((unsigned char *)"[ELF Header] Class is not ELF32\n");
         return -1;  // ELF32
     }
     if (header->id.format != 2) {
-        puts("[ELF Header] Format is not big endian\n");
+        puts((unsigned char *)"[ELF Header] Format is not big endian\n");
         return -1;  // Big endian
     }
     if (header->id.version != 1){
-        puts("[ELF Header] Version is not 1\n");
+        puts((unsigned char *)"[ELF Header] Version is not 1\n");
         return -1;  // version 1
     }
     if (header->type != 2) {
-        puts("[ELF Header] Type is not Executable file\n");
+        puts((unsigned char *)"[ELF Header] Type is not Executable file\n");
         return -1;  // Executable file
     }
     if (header->version != 1) {
-        puts("[ELF Header] Version is not 1\n");
+        puts((unsigned char *)"[ELF Header] Version is not 1\n");
         return -1;  // Version 1
     }
 
     // Hitachi H8/300 or H8/300H
     if ((header->arch != 46) && (header->arch != 47)) {
-        puts("Is not Hitachi H8/300 or H8/300H\n");
+        puts((unsigned char *)"Is not Hitachi H8/300 or H8/300H\n");
         return -1;
     }
     return 0;

@@ -30,7 +30,7 @@ static int dump(char *buf, long size)
 	long i;
 	if (size < 0)
 	{
-		puts("no data.\n");
+		puts((unsigned char *)"no data.\n");
 		return -1;
 	}
 
@@ -38,16 +38,16 @@ static int dump(char *buf, long size)
 	{
 		putxval(buf[i], 2);
 		if ((i & 0xf) == 15) {
-			puts("\n");
+			puts((unsigned char *)"\n");
 		} else {
 			if ((i & 0xf) == 7)
 			{
-				puts(" ");
+				puts((unsigned char *)" ");
 			}
-			puts(" ");
+			puts((unsigned char *)" ");
 		}
 	}
-	puts("\n");
+	puts((unsigned char *)"\n");
 	return 0;
 }
 
@@ -75,42 +75,42 @@ int main(void)
 
 	init();
 
-	puts("kzload (kozos boot loader) started.\n");
+	puts((unsigned char *)"kzload (kozos boot loader) started.\n");
 
 	while (1)
 	{
-		puts("kzload > ");  // プロンプトの表示
-		gets(buf);  // シリアルからのコマンド受信
+		puts((unsigned char *)"kzload > ");  // プロンプトの表示
+		gets((unsigned char *)buf);  // シリアルからのコマンド受信
 
 		if (!strcmp(buf, "load")) { // XMODEMでのファイルダウンロード
-			loadbuf = (char *)(&buffer_start);
-			size = xmodem_recv(loadbuf);
+			loadbuf = (unsigned char *)(&buffer_start);
+			size = xmodem_recv((char *)loadbuf);
 			wait(); // 転送アプリが終了し端末アプリに制御が戻るまで待つ
 			if (size < 0) {
-				puts("\nXMODEM receive error!\n");
+				puts((unsigned char *)"\nXMODEM receive error!\n");
 			} else {
-				puts("\nXMODEM receive suceeded.\n");
+				puts((unsigned char *)"\nXMODEM receive suceeded.\n");
 			}
 		} else if (!strcmp(buf, "dump")) {  // メモリの16進ダンプ出力
-			puts("size: ");
+			puts((unsigned char *)"size: ");
 			putxval(size, 0);
-			puts("\n");
-			dump(loadbuf, size);
+			puts((unsigned char *)"\n");
+			dump((char*)loadbuf, size);
 		} else if (!strcmp(buf, "run")) {
 			// ELF形式ファイルの実行
-			entry_point = elf_load(loadbuf);  // メモリ上に展開
+			entry_point = elf_load((char*)loadbuf);  // メモリ上に展開
 			if (!entry_point) {
-				puts("run error\n");
+				puts((unsigned char *)"run error\n");
 			} else {
-				puts("starting from entry point: ");
+				puts((unsigned char *)"starting from entry point: ");
 				putxval((unsigned long)entry_point, 0);
-				puts("\n");
+				puts((unsigned char *)"\n");
 				f = (void (*)(void))entry_point;
 				f();  // ここでロードしたプログラムに処理を渡す
 				// ここ以降は実行されない
 			}
 		} else {
-			puts("unknown.\n");
+			puts((unsigned char *)"unknown.\n");
 		}
 	}
 	return 0;
