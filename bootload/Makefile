@@ -1,4 +1,4 @@
-PREFIX = /usr/local/h8300-elf
+PREFIX = /usr/local
 ARCH = h8300-elf
 BINDIR = $(PREFIX)/bin
 ADDNAME = $(ARCH)-
@@ -12,12 +12,6 @@ OBJCOPY = $(BINDIR)/$(ADDNAME)objcopy
 OBJDUMP = $(BINDIR)/$(ADDNAME)objdump
 RANLIB = $(BINDIR)/$(ADDNAME)ranlib
 STRIP = $(BINDIR)/$(ADDNAME)strip
-
-# フラッシュ書き込みツール
-H8WRITE = /mnt/d/workspace/kozos/tools/kz_h8write-v0.2.1/bin/kz_h8write
-
-# シリアル接続先
-H8WRITE_SERDEV = /dev/ttyS6
 
 # コンパイルするソースコード
 OBJS = vector.o startup.o intr.o main.o interrupt.o
@@ -48,6 +42,7 @@ $(TARGET) : $(OBJS)
 			$(CC) $(OBJS) -o $(TARGET) $(CFLAGS) $(LFLAGS)
 			cp $(TARGET) $(TARGET).elf
 			$(STRIP) $(TARGET)
+			$(OBJCOPY) -O srec $(TARGET) $(TARGET).mot
 
 # *.cファイルのコンパイルルール
 .c.o : $<
@@ -66,9 +61,15 @@ $(TARGET).mot : $(TARGET)
 
 image : $(TARGET).mot
 
+clean :
+		rm -f $(OBJS) $(TARGET) $(TARGET).elf $(TARGET).mot *.o
+
+# フラッシュ書き込みツール
+H8WRITE = /mnt/d/workspace/kozos/tools/kz_h8write-v0.2.1/bin/kz_h8write
+
+# シリアル接続先
+H8WRITE_SERDEV = /dev/ttyS6
+
 # フラッシュROMへの転送
 write : $(TARGET).mot
 		$(H8WRITE) -3069 -f20 $(TARGET).mot $(H8WRITE_SERDEV)
-
-clean :
-		rm -f $(OBJS) $(TARGET) $(TARGET).elf $(TARGET).mot

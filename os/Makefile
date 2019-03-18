@@ -1,4 +1,4 @@
-PREFIX = /usr/local/h8300-elf
+PREFIX = /usr/local
 ARCH = h8300-elf
 BINDIR = $(PREFIX)/bin
 ADDNAME = $(ARCH)-
@@ -59,4 +59,4 @@ $(TARGET) : $(OBJS)
 		$(CC) -c $(CFLAGS) $<
 
 clean :
-		rm -f $(OBJS) $(TARGET) $(TARGET).elf
+		rm -f $(OBJS) $(TARGET) $(TARGET).elf *.o
