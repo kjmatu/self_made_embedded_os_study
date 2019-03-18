@@ -89,7 +89,7 @@ static int consdrv_intrproc(struct consreg *cons)
         }
 
         // エコーバック処理
-        send_string(cons, &c, 1);
+        send_string(cons, (char *)&c, 1);
 
         if (cons->id)
         {

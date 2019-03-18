@@ -27,7 +27,7 @@ int main(void)
     // 割り込み無効
     INTR_DISABLE;
 
-    puts("kozos boot succeed!\n");
+    puts((unsigned char *)"kozos boot succeed!\n");
 
     // 初期スレッドとしてstart_threads()を優先度0で起動し
     // OSの動作を開始する
