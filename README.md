@@ -6,6 +6,20 @@
 [これ](https://www.amazon.co.jp/12%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%81%A7%E4%BD%9C%E3%82%8B%E7%B5%84%E8%BE%BC%E3%81%BFOS%E8%87%AA%E4%BD%9C%E5%85%A5%E9%96%80-%E5%9D%82%E4%BA%95-%E5%BC%98%E4%BA%AE/dp/4877832394)と[ここ](http://kozos.jp/books/makeos/)を使って組込プログラムの勉強する
 
 
+# 開発環境
+
++ ホストOS Windows10
++ ビルド環境1
+  + クロスコンパイル用ゲストOS Windows Subsystem for Linux (Ubuntu)
+  + gcc, binutilsのバージョンは書籍と同一 (gcc-3.4.6, binutils-2.19.1)
+
++ ビルド環境2
+  + 仮想環境 Docker for Windows
+  + クロスコンパイル用ゲストOS Ubuntu 18.04
+    + gcc 7.3.0
+    + binutils 2.30.0
+  + [ビルド環境構築用Dockerfile](https://github.com/kjmatu/12step_self_embedded_os_dev_enviroment)
+
 # ディップスイッチ設定
 
 |    | 1  | 2   | 3   | 4   |
@@ -16,6 +30,10 @@
 # 注意点
 
 + WSLでやる場合は、毎回シリアルポートの権限を変える必要がある
+``` bash
+例
+>> sudo chmod 666 /dev/ttyS6
+```
 + ポート設定が正しいのに書き込めない場合はリセットすると書き込めるときもある
 
 # メモ
